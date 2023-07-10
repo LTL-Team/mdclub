@@ -193,14 +193,15 @@ class User extends Abstracts implements FollowableInterface, GetableInterface
     /**
      * 创建账号
      *
-     * @param array $data [email, email_code, username, password]
+     * @param array $data [email, email_code, username, password, invitation_code]
      *
      * @return array
      */
     public function register(array $data): array
     {
         $data = UserValidator::register($data);
-
+        // 我们先校验用户的邀请码是否有效
+        
         // 创建用户
         $userId = (int)UserModel
             ::set('username', $data['username'])
