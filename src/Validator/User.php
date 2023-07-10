@@ -22,6 +22,7 @@ class User extends Abstracts
         'username' => '用户名',
         'password' => '密码',
         'device' => '设备信息',
+        'invitecode' => '邀请码'
     ];
 
     /**
@@ -45,7 +46,23 @@ class User extends Abstracts
 
         return $this;
     }
-
+    /**
+     * 判断是否存在有效的邀请码，主要判断邀请码的hash是否存在并且未被使用
+     */
+    protected function inviteCodeValid(): self
+    {
+        if($this->invitecode()->skip()){
+            return $this;
+        }
+        $has = UserModel // 目前不了解如何读取数据库，暂且留一个UserModel插眼
+            ::where('invitecode', $this->value())
+            ->field('use_time')
+            ->get();
+        if(!$has or $has['use_time']) {
+            $this->setError('邀请码不存在或已使用');
+        }
+        return $this;
+    }
     /**
      * 邮箱在用户表中存在，且对应的用户未被禁用
      *
@@ -63,9 +80,9 @@ class User extends Abstracts
             ->get();
 
         if (!$user) {
-            $this->setError('该邮箱尚未注册');
+            $this->setError('该邮箱尚未注册，请先注册');
         } elseif ($user['disable_time']) {
-            $this->setError('该账号已被禁用');
+            $this->setError('该账户已被禁用');
         }
 
         return $this;
@@ -178,7 +195,7 @@ class User extends Abstracts
     /**
      * 注册时的验证
      *
-     * 首先验证 email 和 email_code，若验证不通过，则不严重 username 和 password，用于前端设计注册时支持分步注册
+     * 首先验证 email 和 email_code，若验证不通过，则不验证 username 和 password，用于前端设计注册时支持分步注册
      *
      * @param array $data [email, email_code, username, password]
      *
